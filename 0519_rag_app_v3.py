@@ -454,7 +454,7 @@ with st.sidebar:
     selected_model = st.selectbox(
         "選擇 LLM 模型", 
         options=["gemma3:4b", "weitsung50110/llama-3-taiwan:8b-instruct-dpo-q8_0"], 
-        index=0 # 預設選擇第一個
+        index=1 # 預設選擇第二個
         )
     
     # 溫度(Temperature)選擇
@@ -488,24 +488,28 @@ with st.sidebar:
     
     st.header("記憶設定")
     enable_memory = st.toggle("啟用記憶模式", value=True, help="開啟後，系統會記住近期的對話內容。")
-    # 記憶輪數設定 (連動記憶模式)
-    memory_rounds = st.slider(
-        "對話記憶輪數", 
-        min_value=1, 
-        max_value=5, 
-        value=3, # 預設記憶近 3 輪對話
-        step=1, 
-        disabled=not enable_memory, # 當記憶模式關閉時，滑桿無法拖曳
-        help="設定系統要參考過去幾輪的對話（一問一答為一輪）。"
-    )
     
-    # 2. 子選項：問題改寫模式 (連動記憶模式)
-    enable_rewrite = st.toggle(
-        "啟用問題改寫模式", 
-        value=True, 
-        disabled=not enable_memory, # 關鍵連動：當記憶關閉時，改寫功能會被反灰無法點擊
-        help="開啟後，會利用 LLM 將代名詞替換為完整提問。若未開啟記憶，此功能會自動停用。"
-    )
+    
+    # 建立一個有邊框的容器，把隸屬記憶模式的子設定包起來
+    with st.container(border=True):
+        # 記憶輪數設定 (連動記憶模式)
+        memory_rounds = st.slider(
+            "對話記憶輪數", 
+            min_value=1, 
+            max_value=5, 
+            value=3, # 預設記憶近 3 輪對話
+            step=1, 
+            disabled=not enable_memory, # 當記憶模式關閉時，滑桿無法拖曳
+            help="設定系統要參考過去幾輪的對話（一問一答為一輪）。"
+        )
+    
+        # 2. 子選項：問題改寫模式 (連動記憶模式)
+        enable_rewrite = st.toggle(
+            "啟用問題改寫模式", 
+            value=True, 
+            disabled=not enable_memory, # 關鍵連動：當記憶關閉時，改寫功能會被反灰無法點擊
+            help="開啟後，會利用 LLM 將代名詞替換為完整提問。若未開啟記憶，此功能會自動停用。"
+        )
     
     if st.button("清除目前對話記憶/紀錄"):
         st.session_state.messages = []
