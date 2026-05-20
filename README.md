@@ -45,11 +45,11 @@
 1.  開啟 **Anaconda Prompt**。
 2.  建立名為 `pathology_rag` 的虛擬環境，並指定 Python 3.11：
     ```bash
-    conda create -n pathology_rag python=3.11 -y
+    conda create -n pathology_rag_py3.11 python=3.11 -y
     ```
 3.  啟動虛擬環境：
     ```bash
-    conda activate pathology_rag
+    conda activate pathology_rag_py3.11
     ```
 
 ### 步驟三：安裝 Python 依賴套件
@@ -82,7 +82,7 @@
     streamlit run 0519_rag_app_v3.py
     ```
 4.  瀏覽器將自動開啟 `http://localhost:8501`。
-5.  初次使用時，請點擊左側側邊欄的「📁 開啟檔案管理」，上傳您的病理科相關文件（如流程規範、儀器說明書等），系統便會自動將其切塊並寫入 Chroma 向量資料庫中。
+5.  初次使用時，請點擊左側側邊欄的「📁 開啟檔案管理」，上傳您的病理科相關文件（如流程規範、儀器說明書等），系統便會自動將其進行文本分割並轉換寫入 Chroma 向量資料庫中。
 
 ---
 
