@@ -14,7 +14,7 @@
 ## 💻 系統環境需求
 
 本教學以 **Windows 11** 作業系統為例，並建議使用 **Anaconda** 進行環境管理。
-* **建議 Python 版本**：3.11
+* **Python 版本**：3.11
 * **使用工具**：Anaconda
 
 ---
@@ -89,6 +89,6 @@
 ## 📂 專案架構說明
 
 * `0519_rag_app_v3.py`：系統主程式，包含 Streamlit UI、LangChain 處理流程與 Chroma 資料庫操作。
-* `requirements_chroma.txt`：記錄所有 Python 依賴套件的清單。
-* `01_processed_data/`：（自動生成）存放使用者上傳並轉檔完成的實體檔案。
-* `02_db/chroma_db/`：（自動生成）存放 Chroma 建立的本地向量資料庫檔案。
+* `requirements_chroma.txt`：記錄所有 Python 套件的清單。
+* `01_processed_data/`：（自動生成資料夾）存放使用者上傳並轉檔完成的實體檔案。
+* `02_db/chroma_db/`：（自動生成資料夾）存放 Chroma 建立的本地向量資料庫檔案。
