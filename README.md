@@ -114,7 +114,17 @@
   ```bash
   ollama rm <模型名稱>
   ```
+  
+### 虛擬環境與系統檢查
+* **查看所有的 Anaconda 虛擬環境**：
+  ```bash
+  conda env list
+  ```
 
+* **檢查顯示卡狀態與 VRAM 使用量 (若有配備 NVIDIA 獨立顯卡）**：
+  ```bash
+  nvidia-smi
+  ```
 
 
 
