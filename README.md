@@ -75,7 +75,7 @@
 
 所有環境與依賴配置完成後，即可啟動檢索問答系統：
 
-1.  確認 Anaconda Prompt 已進入 `pathology_rag` 虛擬環境。
+1.  確認 Anaconda Prompt 已進入 `pathology_rag_py3.11` 虛擬環境。
 2.  確認 Ollama 應用程式已在系統工具列背景執行。
 3.  輸入以下指令啟動 Streamlit 網頁服務：
     ```bash
