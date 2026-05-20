@@ -105,6 +105,15 @@
   ollama list
   ```
 
+* **查看正在執行中的模型**：
+  ```bash
+  ollama ps
+  ```
+
+* **刪除不需要的模型**：
+  ```bash
+  ollama rm <模型名稱>
+  ```
 
 
 
