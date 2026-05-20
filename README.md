@@ -48,7 +48,7 @@
 為避免套件版本衝突，建議為本專案建立獨立的虛擬環境。
 
 1.  開啟 **Anaconda Prompt**。
-2.  建立名為 `pathology_rag` 的虛擬環境，並指定 Python 3.11：
+2.  建立名為 `pathology_rag_py3.11` 的虛擬環境，並指定 Python 3.11：
     ```bash
     conda create -n pathology_rag_py3.11 python=3.11 -y
     ```
