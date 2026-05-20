@@ -71,7 +71,7 @@
 
 由於系統內建將舊版 Word 檔案（`.doc`）自動轉換為 `.docx` 的功能，底層需要呼叫 LibreOffice 進行無頭（Headless）轉檔。
 
-1.  前往 [LibreOffice 官方網站](https://zh-tw.libreoffice.org/download/libreoffice-still/) 下載並安裝最新版軟體。
+1.  前往 [LibreOffice 官方網站](https://zh-tw.libreoffice.org/download/) 下載並安裝最新版軟體。
 2.  請確保軟體安裝於系統預設路徑：`C:\Program Files\LibreOffice\program\soffice.exe`。若安裝於其他路徑，需手動修改主程式 `0519_rag_app_v3.py` 中的 `soffice_path` 變數。
 
 ---
