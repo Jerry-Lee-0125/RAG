@@ -1,4 +1,5 @@
 import os
+import glob
 import shutil
 import subprocess
 import streamlit as st
@@ -216,49 +217,30 @@ def file_management_center():
                             continue # 發現加密，直接跳過這個檔案，不寫入硬碟也不轉檔
               
                 
-                        # 2. --- 去除重複檔名 ---
-                        existing_pdf = os.path.join(processed_data_path, f"{name}.pdf")
-                        existing_docx = os.path.join(processed_data_path, f"{name}.docx")
-                        existing_doc = os.path.join(processed_data_path, f"{name}.doc")
+                        # 2. --- 檢查重複檔名 (安全阻擋機制) ---
+                        # 掃描資料夾內是否有相同主檔名的檔案 (例如找 細胞學檢查規範.*)
+                        search_pattern = os.path.join(processed_data_path, f"{name}.*")
+                        existing_files = glob.glob(search_pattern)
                         
-                        if ext == '.pdf':
-                            # 情況 A：現在上傳的是 PDF，那就把資料夾裡舊的同名 WORD 刪掉（確保只留 PDF）
-                            for old_word in [existing_docx, existing_doc]:
-                                if os.path.exists(old_word):
-                                    remove_file_from_db(old_word, st.session_state.vectordb)
-                                    os.remove(old_word)
-                        elif ext in ['.doc', '.docx']:
-                            # 情況 B：現在上傳的是 WORD，但如果資料夾已經有同名的 PDF 了，就直接略過這個 WORD
-                            if os.path.exists(existing_pdf):
-                                failed_records.append({"檔案名稱": file.name, "失敗原因": "已存在同名的 PDF 檔案，自動略過保留最佳格式"})
-                                continue
-                
-                
-                        # 3. --- 清理舊資料 ---
-                        # 為了確保資料庫更新，如果上傳了同名檔案，先把舊的刪除
-                        if ext == '.doc':
-                            old_docx_path = os.path.join(processed_data_path, f"{name}.docx")
-                            if os.path.exists(old_docx_path):
-                                remove_file_from_db(old_docx_path, st.session_state.vectordb)
-                                os.remove(old_docx_path)
-                                
-                        elif ext in ['.xls', '.xlsx']:
-                            # Excel 會被拆分成多個 CSV，所以要掃描所有開頭相同的 CSV 檔並刪除
-                            for existing_file in os.listdir(processed_data_path):
-                                if existing_file.startswith(f"{name}_") and existing_file.endswith(".csv"):
-                                    old_csv_path = os.path.join(processed_data_path, existing_file)
-                                    remove_file_from_db(old_csv_path, st.session_state.vectordb)
-                                    os.remove(old_csv_path)
-                        else:
-                            if os.path.exists(file_path):
-                                remove_file_from_db(file_path, st.session_state.vectordb)
-
-                        # 確定舊檔都清乾淨後，才將新上傳的檔案寫入硬碟
+                        # 如果上傳的是 Excel，也要檢查是否已經有拆解出來的 CSV 檔
+                        search_pattern_csv = os.path.join(processed_data_path, f"{name}_*.csv")
+                        existing_files.extend(glob.glob(search_pattern_csv))
+                        
+                        # 如果找到任何同名的舊檔案，立刻攔截！
+                        if existing_files:
+                            failed_records.append({
+                                "檔案名稱": file.name, 
+                                "失敗原因": "已存在同名檔案。為避免資料遺失，請先至「管理現有文件」手動刪除舊檔後再上傳"
+                            })
+                            continue # 直接跳過這個檔案，不寫入硬碟也不轉檔，繼續處理下一個檔案
+                            
+                        # 3. --- 正式寫入硬碟 ---
+                        # 確定沒有同名衝突後，才將新上傳的檔案寫入硬碟
                         with open(file_path, "wb") as f:
                             f.write(file.getbuffer())
                         
                         
-                        # 3. --- 轉檔與資料庫寫入 ---
+                        # 4. --- 轉檔與資料庫寫入 ---
                         try:
                             # 處理舊版 Word (.doc) -> 呼叫 LibreOffice 轉成 .docx
                             if ext == '.doc':
@@ -328,7 +310,7 @@ def file_management_center():
                 progress_bar.empty()
                 
                 
-                # 4. --- 上傳結果呈現 ---
+                # 5. --- 上傳結果呈現 ---
                 if save_count == len(uploaded_files):
                     # 情況一：全部成功，記錄提示訊息並重新整理網頁
                     st.session_state["show_success_toast"] = f"✅ 成功處理全部 {save_count} 份檔案！"
