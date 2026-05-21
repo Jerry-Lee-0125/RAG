@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import shutil
 import subprocess
@@ -68,6 +69,16 @@ def add_file_to_db(file_path, vectordb):
         return False 
     
     if docs:
+        # 先將所有載入的文本進行空白壓縮
+        for doc in docs:
+            raw_text = doc.page_content
+            # 1. 將連續的空白行強制壓縮成標準的雙換行
+            clean_text = re.sub(r'\n\s*\n+', '\n\n', raw_text)
+            # 2. 清除每一行開頭的空白與 Tab
+            clean_text = "\n".join([line.lstrip() for line in clean_text.split('\n')])
+            # 3. 清除整個段落頭尾多餘的空白與隱藏字元
+            doc.page_content = clean_text.strip()
+            
         # 進行文本分割
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=600,     
@@ -112,13 +123,13 @@ def build_vector_db(vectordb, ui_placeholder=None):
     
     try:
         # 清空向量資料庫內的所有資料，而不是刪除實體資料夾，避免遇到「檔案被鎖定」的報錯
-        update_ui("✅ **[階段 1/4]** 正在清空舊有向量資料庫...")
+        update_ui("✅ **[階段 1/5]** 正在清空舊有向量資料庫...")
         vectordb.delete_collection()
     except Exception as e:
         pass # 如果是空資料庫或初次建立，可能沒有資料可以清，直接略過
 
     # 重新讀取資料夾內所有支援的檔案
-    update_ui("✅ **[階段 2/4]** 正在掃描並讀取硬碟中的病理科檔案...")
+    update_ui("✅ **[階段 2/5]** 正在掃描並讀取硬碟中的病理科檔案...")
     pdf_docs = DirectoryLoader(processed_data_path, glob="**/*.pdf", loader_cls=PyPDFLoader).load()
     docx_docs = DirectoryLoader(processed_data_path, glob="**/*.docx", loader_cls=Docx2txtLoader).load()
     csv_docs = DirectoryLoader(processed_data_path, glob="**/*.csv", loader_cls=CSVLoader, loader_kwargs={'encoding': 'utf-8-sig'}).load()
@@ -128,8 +139,18 @@ def build_vector_db(vectordb, ui_placeholder=None):
     # 若沒有任何文件，回傳空的 Chroma 實例
     if not docs:
         return get_vector_db()
+    
+    update_ui("✅ **[階段 3/5]** 正在執行資料清洗...")
+    for doc in docs:
+        raw_text = doc.page_content
+        # 壓縮連續的空白行
+        clean_text = re.sub(r'\n\s*\n+', '\n\n', raw_text)
+        # 清除每一行開頭的空白與 Tab
+        clean_text = "\n".join([line.lstrip() for line in clean_text.split('\n')])
+        # 清除頭尾多餘字元
+        doc.page_content = clean_text.strip()
 
-    update_ui("✅ **[階段 3/4]** 正在進行文本分割...")    
+    update_ui("✅ **[階段 4/5]** 正在進行文本分割...")    
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=600,  
         chunk_overlap=150,  
@@ -138,13 +159,13 @@ def build_vector_db(vectordb, ui_placeholder=None):
     split_docs = text_splitter.split_documents(docs)
 
     # 建立並儲存新的 Chroma 向量資料庫
-    update_ui("✅ **[階段 4/4]** 嵌入模型轉換向量並寫入資料庫...")
+    update_ui("✅ **[階段 5/5]** 嵌入模型轉換向量並寫入資料庫...")
     new_vectordb = Chroma.from_documents(
         documents=split_docs, 
         embedding=embeddings,
         persist_directory=chroma_path 
     )
-    return new_vectordb   
+    return new_vectordb  
 
 # ==========================================
 # 4. 檔案管理介面 (使用 Streamlit 對話框功能)
@@ -516,6 +537,24 @@ if "vectordb" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        
+        # 檢查該筆歷史紀錄是否有來源資料 (docs)
+        if "docs" in message and message["docs"]:
+            st.markdown("#### 🔍 檢索來源片段：")
+            for i, doc in enumerate(message["docs"]):
+                source_name = os.path.basename(doc.metadata.get('source', '未知'))
+                page_num = doc.metadata.get('page')
+                
+                if page_num is not None:
+                    header_text = f"來源 {i+1}: {source_name} (第 {page_num + 1} 頁)"
+                else:
+                    header_text = f"來源 {i+1}: {source_name}"
+                
+                with st.expander(header_text):
+                    st.markdown(f'<div style="font-size: 0.85em; color: #505050;">{doc.page_content}</div>', unsafe_allow_html=True)
+        
+        
+        
 
 
 # ==========================================
@@ -524,7 +563,9 @@ for message in st.session_state.messages:
 # 當使用者在對話框輸入問題時觸發
 if prompt_input := st.chat_input("請輸入關於病理科流程的問題..."):
     # 1. 將使用者的問題存入歷史對話並顯示在畫面上
-    st.session_state.messages.append({"role": "user", "content": prompt_input})
+    st.session_state.messages.append({"role": "user", 
+                                      "content": prompt_input,
+                                      })
     with st.chat_message("user"):
         st.markdown(prompt_input)
 
@@ -619,17 +660,30 @@ if prompt_input := st.chat_input("請輸入關於病理科流程的問題..."):
         try:
             ans = st.write_stream(stream_generator())
             
-            # 使用折疊選單 (Expander) 顯示資料庫找出來的參考來源
-            with st.expander("查看檢索來源片段"):
-                if docs:
-                    for i, doc in enumerate(docs):
-                        st.write(f"**來源 {i+1}:** {os.path.basename(doc.metadata.get('source', '未知'))}")
-                        st.caption(doc.page_content) 
-                else:
-                    st.write("沒有找到相關的參考資料。")
+            st.markdown("#### 🔍 檢索來源片段：")
             
-            # 將 LLM 的最終回答存入歷史紀錄，讓下一輪對話可以參考
-            st.session_state.messages.append({"role": "assistant", "content": ans})
+            if docs:
+                for i, doc in enumerate(docs):
+                    source_name = os.path.basename(doc.metadata.get('source', '未知'))
+                    page_num = doc.metadata.get('page')
+                    
+                    if page_num is not None:
+                        header_text = f"來源 {i+1}: {source_name} (第 {page_num + 1} 頁)"
+                    else:
+                        header_text = f"來源 {i+1}: {source_name}"
+                        
+                    with st.expander(header_text):
+                        # 統一使用縮小的深灰色字體
+                        st.markdown(f'<div style="font-size: 0.85em; color: #505050;">{doc.page_content}</div>', unsafe_allow_html=True)
+            else:
+                st.write("沒有找到相關的參考資料。")
+            
+            
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": ans,
+                "docs": docs  
+            })
             
         except Exception as e:
             # 錯誤處理：如果 Ollama 沒開或是模型名字打錯
