@@ -1,5 +1,6 @@
 import os
 import re
+import math
 import glob
 import shutil
 import subprocess
@@ -359,10 +360,13 @@ def file_management_center():
                 if not file.startswith('.') and not file.startswith('~$'):
                     abs_path = os.path.join(root, file)
                     rel_path = os.path.relpath(abs_path, processed_data_path)
-                    size_mb = os.path.getsize(abs_path) / (1024 * 1024) # 顯示檔案大小(MB)
+                    # 取得原始大小並轉換為 MB
+                    raw_size_mb = os.path.getsize(abs_path) / (1024 * 1024) 
+                    # 乘以 100 進行無條件進位後，再除以 100，保留到小數點後兩位
+                    size_mb = math.ceil(raw_size_mb * 100) / 100
                     mtime_str = datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y-%m-%d %H:%M') # 顯示檔案修改時間
                     
-                    file_data.append({"選取刪除": False, "檔案路徑": rel_path, "檔案大小 (MB)": round(size_mb, 3), "檔案上傳時間": mtime_str})
+                    file_data.append({"選取刪除": False, "檔案路徑": rel_path, "檔案大小 (MB)": size_mb, "檔案上傳時間": mtime_str})
 
         if file_data:
             st.write(f"目前資料庫內共有 {len(file_data)} 筆可檢索檔案：")
