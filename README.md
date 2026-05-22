@@ -22,6 +22,7 @@
 * **語言模型 (LLM)**：透過 **Ollama** 於本地端離線運行大型語言模型（如 Gemma 3 或 Llama 3 Taiwan），確保所有醫療提問與對話紀錄皆在本地端運作，符合嚴格的資安規範。
 * **RAG 應用框架**：基於 **LangChain** 框架串接文件讀取、文本切塊（Text Splitter）、以及多輪對話記憶（Memory）功能。
 * **向量資料庫 (Vector DB)**：採用 **Chroma (ChromaDB)** 進行文件特徵的儲存與高效相似度檢索，並搭配 `bge-m3` 嵌入模型（Embedding Model），大幅提升繁體中文醫療術語的比對精準度。
+![](/assets/app.png)
 
 ---
 
